@@ -7,6 +7,7 @@ import matplotlib as plt
 import seaborn as sb
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+import encoders
 
 '''********************
 Data being used is based on a 25 x 25 game of life box
@@ -61,6 +62,9 @@ def gameLogic(x, nbr):
     #All other live cells die in the next generation. Similarly, all other dead cells stay dead.
     elif(x == 1):
         return 0
+    #empty cells with no neighbors remain empty
+    else:
+        return 0;
     
     
     
@@ -74,58 +78,46 @@ data = pd.read_csv('./data/train.csv')
 
 
 #number of steps from start to end
-deltas = data['delta'].to_frame()
+deltas = data['delta'].to_numpy()#.to_frame()
 #print(deltas)
 
 #y_train data
 #list of starting data frames (our solutions)
-starts = data.loc[:, 'start_0':'start_624']
+starts = data.loc[:, 'start_0':'start_624'].to_numpy()
 #starts = deltas.join(starts)
 #print(starts.shape)
 
 #x_train data
 #list of ending data frames (our starting points, ya that sounds confusing)
 #as well as deltas (number of steps between start and stop)
-stops = data.loc[:, 'stop_0':'stop_624']
+stops = data.loc[:, 'stop_0':'stop_624'].to_numpy()
 #stops = deltas.join(stops)
 #print(stops)
 
 x_train, x_test, y_train, y_test = train_test_split(
     stops, starts, test_size=.2, random_state=10)
+
+'''Verify that the GoL simulation is working correctly'''
 '''
-print(x_train.shape)
-print(x_test.shape)
-print(y_train.shape)
-print(y_test.shape)
+total_score = 0;
+#max_score = starts.shape[0]
+max_score = 500
+test_starts = starts.to_numpy()
+test_stops = stops.to_numpy()
+test_deltas = deltas.to_numpy()
+for i in tqdm(range(max_score)):
+    if(checkStart(test_starts[i], test_stops[i], test_deltas[i][0])):
+        total_score += 1
 '''
+
+
 '''#############      Create auto encoder model       #################'''
-'''basic auto encoder model found at 
-https://blog.keras.io/building-autoencoders-in-keras.html'''
-
-enc_dim = 625
-end_frame = keras.Input(shape=(625,))
-encoded = layers.Dense(enc_dim, activation='relu')(end_frame)
-decoded = layers.Dense(625, activation='sigmoid')(encoded)
-
-auto_encoder = keras.Model(end_frame, decoded)
-
-#encoder model
-encoder = keras.Model(end_frame, encoded)
-
-#decoder model
-# This is our encoded (32-dimensional) input
-encoded_endFrame = keras.Input(shape=(enc_dim,))
-# Retrieve the last layer of the autoencoder model
-decoder_layer = auto_encoder.layers[-1]
-# Create the decoder model
-decoder = keras.Model(encoded_endFrame, decoder_layer(encoded_endFrame))
 
 
-
-auto_encoder.compile(optimizer='adam', loss='binary_crossentropy')
+auto_encoder, encoder, decoder = encoders.basic_encoder()
 
 auto_encoder.fit(x_train, y_train,
-                epochs=1,
+                epochs=15,
                 batch_size=256,
                 shuffle=True,
                 validation_data=(x_test, y_test))
@@ -135,28 +127,30 @@ auto_encoder.fit(x_train, y_train,
 '''######################     Test Predictions     ####################'''
 
 test_data = pd.read_csv('./data/test.csv')
-print(test_data)
+#print(test_data)
 test_data = test_data.drop('id', axis='columns')
 test_deltas = test_data['delta']
 test_data = test_data.drop('delta', axis='columns')
 test_data = test_data.to_numpy()
 
 
-#TODO use encoder or decoder here?????
-encoded_solution = decoder.predict(test_data)
+
+#use encoder to convert end frame to start
+encoded_solution = encoder.predict(test_data)
 
 #round all predictions to nearest whole number
 encoded_solution = np.rint(encoded_solution)
 #round negatives to zero to get GoL frame
 encoded_solution[encoded_solution < 0] = 0
 
-print(encoded_solution)
-print(type(encoded_solution))
+#print(encoded_solution)
+#print(type(encoded_solution))
 total_score = 0;
 max_score = test_data.shape[0]
 
-for i in tqdm(range(encoded_solution.shape[0])):
-    if(checkStart(encoded_solution[i], test_data[i], test_deltas[i])):
+#for i in tqdm(range(encoded_solution.shape[0])):
+for i in tqdm(range(500)):
+    if(checkStart(encoded_solution[i], test_data[i], test_deltas[i]+10)):
         total_score += 1
 
 print('Accuracy: ', total_score/max_score)
