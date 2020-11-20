@@ -113,7 +113,8 @@ for i in tqdm(range(max_score)):
 
 '''#############      Create auto encoder model       #################'''
 
-
+##########   Basic encoder   ##########
+'''
 auto_encoder, encoder, decoder = encoders.basic_encoder()
 
 auto_encoder.fit(x_train, y_train,
@@ -121,8 +122,35 @@ auto_encoder.fit(x_train, y_train,
                 batch_size=256,
                 shuffle=True,
                 validation_data=(x_test, y_test))
+'''
+###########   Convolutional encoder   #########
+
+'''TODO: get this working
+
+auto_encoder, encoder, decoder = encoders.conv_encoder()
+
+auto_encoder.fit(x_train, y_train,
+                epochs=15,
+                batch_size=256,
+                shuffle=True,
+                validation_data=(x_test, y_test))
+'''
+
+'''###########   Convolutional Neural network   ##########'''
+
+######   Basic convolutional network prediction   ########
+
+#auto_encoder = encoders.basic_conv_sequential_1D()
 
 
+auto_encoder = encoders.basic_conv(x_train.shape[0],x_train.shape[1])
+
+auto_encoder.summary()
+auto_encoder.fit(x_train, y_train,
+                epochs=15,
+                batch_size=256,
+                shuffle=True,
+                validation_data=(x_test, y_test))
 
 '''######################     Test Predictions     ####################'''
 
@@ -134,9 +162,13 @@ test_data = test_data.drop('delta', axis='columns')
 test_data = test_data.to_numpy()
 
 
-
+''' ###  Use if using encoder and not CNN  ###
 #use encoder to convert end frame to start
 encoded_solution = encoder.predict(test_data)
+'''
+
+###  Use for CNN  ###
+encoded_solution = auto_encoder.predict(test_data)
 
 #round all predictions to nearest whole number
 encoded_solution = np.rint(encoded_solution)
@@ -149,7 +181,7 @@ total_score = 0;
 max_score = test_data.shape[0]
 
 #for i in tqdm(range(encoded_solution.shape[0])):
-for i in tqdm(range(500)):
+for i in tqdm(range(1000)):
     if(checkStart(encoded_solution[i], test_data[i], test_deltas[i]+10)):
         total_score += 1
 
