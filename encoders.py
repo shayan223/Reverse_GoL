@@ -116,9 +116,31 @@ def basic_conv(data_count,enc_dim):
 
     return model
 
+def deep_conv(data_count,enc_dim):
+    
+    input_dim = (1,25,25)
+    input_frame = keras.Input(shape=input_dim)
+    
+    #x = keras.layers.Dense(enc_dim)(input_frame)
+    
+    x = layers.Conv2D(filters=32,kernel_size=(3,3),padding='same')(input_frame)#(x)
+    #x = keras.layers.BatchNormalization()(x)
+    
+    x = layers.Conv2D(filters=128,kernel_size=(3,3),activation='relu',padding='same')(x) 
+    x = layers.BatchNormalization()(x)
 
+    x = layers.Conv2D(filters=32,kernel_size=(3,3),activation='relu',padding='same')(x) 
+    x = layers.BatchNormalization()(x)
 
+    x = layers.Conv2D(filters=64,kernel_size=(3,3),activation='relu',padding='same')(x) 
+    out_layer = layers.Dense(25, activation='relu')(x)
+    
+    model = keras.Model(inputs=input_frame,outputs=out_layer)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['accuracy'])
 
+    return model
 
 
 

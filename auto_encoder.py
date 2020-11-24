@@ -67,7 +67,7 @@ def gameLogic(x, nbr):
         return 0;
     
     
-    
+
 ''''##################    DATA INIT     ##################################'''
 
 #TODO check to see whether adding deltas to training data is a good idea or not
@@ -96,6 +96,15 @@ stops = data.loc[:, 'stop_0':'stop_624'].to_numpy()
 
 x_train, x_test, y_train, y_test = train_test_split(
     stops, starts, test_size=.2, random_state=10)
+
+'''reshape to 25x25 if using a conv net, otherwise comment out the following'''
+reshaping_dim = (-1,1,25,25)
+
+#for i in range(x_train.shape[0]):
+x_train = np.reshape(x_train,reshaping_dim)
+y_train = np.reshape(y_train, reshaping_dim)
+x_test = np.reshape(x_test, reshaping_dim)
+y_test = np.reshape(y_test, reshaping_dim)
 
 '''Verify that the GoL simulation is working correctly'''
 '''
@@ -143,7 +152,7 @@ auto_encoder.fit(x_train, y_train,
 #auto_encoder = encoders.basic_conv_sequential_1D()
 
 
-auto_encoder = encoders.basic_conv(x_train.shape[0],x_train.shape[1])
+auto_encoder = encoders.deep_conv(x_train.shape[0],x_train.shape[1])
 
 auto_encoder.summary()
 auto_encoder.fit(x_train, y_train,
@@ -161,6 +170,8 @@ test_deltas = test_data['delta']
 test_data = test_data.drop('delta', axis='columns')
 test_data = test_data.to_numpy()
 
+#NOTE: only use below on CNN (to reshape)
+test_data = np.reshape(test_data, reshaping_dim)
 
 ''' ###  Use if using encoder and not CNN  ###
 #use encoder to convert end frame to start
