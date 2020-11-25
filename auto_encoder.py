@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 import pandas as pd
 import keras
 from keras import layers
@@ -9,19 +10,25 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import encoders
 
+#enable eager execution
+#tf.compat.v1.enable_eager_execution()
 '''********************
 Data being used is based on a 25 x 25 game of life box
 that has been flattened to a list of length 625
 ********************'''
 
-#Function to check if starting frame is a solution
-def checkStart(start, end, iterCount):
-    #BOTH AS 1D ARRAYS
+#Function to check if starting frame is a solution        
+def checkStart(start, end, iterCount, shaped=True):
+    #if shaped = true -> 2d input expected
+    #if shaped = false -> 1d input expected
     #start = initial GoL configuration (our solution)
     #end = ending configuration (what we start wtih)
     
-    #convert from flattened to 2d matrix
-    start_2d = np.reshape(start, (25,25))
+    #reshape if necesary 
+    if(shaped == False):
+        start_2d = np.reshape(start, (25,25))
+    else: 
+        start_2d = start
     
     
     for k in range(iterCount):
@@ -39,7 +46,6 @@ def checkStart(start, end, iterCount):
     
     #if no match occurs after all iterations, start and end do not match
     return False 
-        
         
 #uses a convolution to compute the next GoL step 
 def testfilter(x):
@@ -78,24 +84,39 @@ data = pd.read_csv('./data/train.csv')
 
 
 #number of steps from start to end
-deltas = data['delta'].to_numpy()#.to_frame()
+deltas = data['delta'].to_frame()#.to_numpy()
 #print(deltas)
 
 #y_train data
 #list of starting data frames (our solutions)
-starts = data.loc[:, 'start_0':'start_624'].to_numpy()
-#starts = deltas.join(starts)
+starts = data.loc[:, 'start_0':'start_624']#.to_numpy()
+starts = deltas.join(starts)
 #print(starts.shape)
 
 #x_train data
 #list of ending data frames (our starting points, ya that sounds confusing)
 #as well as deltas (number of steps between start and stop)
-stops = data.loc[:, 'stop_0':'stop_624'].to_numpy()
-#stops = deltas.join(stops)
+stops = data.loc[:, 'stop_0':'stop_624']#.to_numpy()
+stops = deltas.join(stops)
 #print(stops)
 
 x_train, x_test, y_train, y_test = train_test_split(
     stops, starts, test_size=.2, random_state=10)
+
+#seperate deltas for training
+x_train_delta = x_train['delta'].to_numpy()
+x_train = x_train.loc[:, 'stop_0':'stop_624'].to_numpy()
+
+x_test_delta = x_test['delta'].to_numpy()
+x_test = x_test.loc[:, 'stop_0':'stop_624'].to_numpy()
+
+y_train_delta = y_train['delta'].to_numpy()
+y_train = y_train.loc[:, 'start_0':'start_624'].to_numpy()
+
+y_test_delta = y_test['delta'].to_numpy()
+y_test = y_test.loc[:, 'start_0':'start_624'].to_numpy()
+
+
 
 '''reshape to 25x25 if using a conv net, otherwise comment out the following'''
 reshaping_dim = (-1,1,25,25)
@@ -152,15 +173,21 @@ auto_encoder.fit(x_train, y_train,
 #auto_encoder = encoders.basic_conv_sequential_1D()
 
 
-auto_encoder = encoders.deep_conv(x_train.shape[0],x_train.shape[1])
+auto_encoder = encoders.iter_conv(x_train.shape[0],
+                                  x_train.shape[1],
+                                  x_train,
+                                  y_train,
+                                  x_train_delta,#x_train and y_train have the same delta
+                                  epochs=15)
 
-auto_encoder.summary()
+#auto_encoder.summary()
+'''
 auto_encoder.fit(x_train, y_train,
                 epochs=15,
                 batch_size=256,
                 shuffle=True,
                 validation_data=(x_test, y_test))
-
+'''
 '''######################     Test Predictions     ####################'''
 
 test_data = pd.read_csv('./data/test.csv')
