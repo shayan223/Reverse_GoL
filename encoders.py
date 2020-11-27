@@ -4,6 +4,7 @@ from keras import layers
 from keras import activations
 import keras.backend as K
 from scipy import ndimage
+import tensorflow as tf
 
 def basic_encoder(): 
     
@@ -218,7 +219,7 @@ def custom_loss(delta=1):
     
     return loss_func
 
-
+#def custom_loss2(y_true, y_pred)
 
 def iter_conv(data_count,enc_dim,x_train,y_train,train_deltas,epochs=1):
     
@@ -251,11 +252,13 @@ def iter_conv(data_count,enc_dim,x_train,y_train,train_deltas,epochs=1):
 #   https://gist.github.com/JVGD/2add7789ab83588a397bbae6ff614dbf 
 
     optimizer = keras.optimizers.Adam(lr=0.001)
-    loss = custom_loss(5)#5 assumes a constant delta of 5 across all data
-    update_op = optimizer.get_updates(params=model.trainable_weights,
-                                      loss=loss(keras.Input(shape=input_dim),
-                                                model(keras.Input(shape=input_dim))
-                                                ))#converts input from numpy to tensor
+    #loss = custom_loss(5)#5 assumes a constant delta of 5 across all data
+    loss = keras.losses.categorical_crossentropy(keras.Input(shape=input_dim),
+                                                 model(keras.Input(shape=input_dim)))
+    update_op = optimizer.get_updates(params=model.trainable_weights,loss=loss)
+    '''loss(keras.Input(shape=input_dim),
+    model(keras.Input(shape=input_dim))
+    ))#converts input from numpy to tensor'''
     
     train = K.function(inputs=[x_train,y_train],
                        outputs=loss,#outputs=[loss,model.layer[-1].output],
@@ -285,10 +288,11 @@ def iter_conv(data_count,enc_dim,x_train,y_train,train_deltas,epochs=1):
             target = K.constant(target)
             
             cur_input = cur_sample
+            #target = tf.convert_to_tensor(target)
             for i in range(sample_delta):
-                
+                #cur_input = tf.convert_to_tensor(cur_input)
                 #calculate loss, running a training iteration
-                loss_train = train([cur_input, target])
+                loss_train = train([tf.convert_to_tensor(cur_input), tf.convert_to_tensor(target)])
                 training_losses.append(loss_train[0])
                 
                 #set next input to current output (out_layer.output)
@@ -317,6 +321,39 @@ def iter_conv(data_count,enc_dim,x_train,y_train,train_deltas,epochs=1):
 
 
 
+'''#############   Another more educated try at a basic encoder ############'''
+
+
+def basic_encoder_mk2(data_count,enc_dim,x_train,y_train,train_deltas,epochs=1): 
+    
+    '''applying iterative model to the basic encoder'''
+    
+    enc_dim = (1,25,25)
+    
+    end_frame = keras.Input(shape=(enc_dim))
+    encoded = layers.Conv2D(filters=32,kernel_size=(3,3), padding='same')(end_frame)
+    x = layers.Conv2D(filters=64,kernel_size=(3,3), padding='same')(encoded)
+    x = layers.Conv2D(filters=128,kernel_size=(3,3),padding='same',activation='relu')(x)
+    decoded = layers.Dense(25, activation='relu')(x)
+    #decoded = layers.Conv2D(filters=32, kernel_size=(3,3), activation='relu')(x)
+    
+    
+    auto_encoder = keras.Model(end_frame, decoded)
+    
+    #encoder model
+    encoder = keras.Model(end_frame, encoded)
+    
+    #decoder model
+    # This is our encoded input
+    encoded_endFrame = keras.Input(shape=(25,25))
+    # Retrieve the last layer of the autoencoder model
+    decoder_layer = auto_encoder.layers[-1]
+    # Create the decoder model
+    #decoder = keras.Model(encoded_endFrame, decoder_layer(encoded_endFrame))
+    
+    auto_encoder.compile(optimizer='adam', loss='categorical_crossentropy')
+    
+    return auto_encoder, encoder#, decoder
 
 
 

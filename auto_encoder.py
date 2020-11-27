@@ -18,7 +18,7 @@ that has been flattened to a list of length 625
 ********************'''
 
 #Function to check if starting frame is a solution        
-def checkStart(start, end, iterCount, shaped=True):
+def checkStart(start, end, iterCount, shaped=True, extra_dim=False):
     #if shaped = true -> 2d input expected
     #if shaped = false -> 1d input expected
     #start = initial GoL configuration (our solution)
@@ -30,6 +30,8 @@ def checkStart(start, end, iterCount, shaped=True):
     else: 
         start_2d = start
     
+    if(extra_dim == True):
+        start_2d = start[0,:,:]
     
     for k in range(iterCount):
         #compute number of neighbors per cell
@@ -173,21 +175,39 @@ auto_encoder.fit(x_train, y_train,
 #auto_encoder = encoders.basic_conv_sequential_1D()
 
 
-auto_encoder = encoders.iter_conv(x_train.shape[0],
+'''auto_encoder = encoders.iter_conv(x_train.shape[0],
                                   x_train.shape[1],
                                   x_train,
                                   y_train,
                                   x_train_delta,#x_train and y_train have the same delta
-                                  epochs=15)
-
-#auto_encoder.summary()
+                                  epochs=15)'''
 '''
+auto_encoder.summary()
+
 auto_encoder.fit(x_train, y_train,
                 epochs=15,
                 batch_size=256,
                 shuffle=True,
                 validation_data=(x_test, y_test))
 '''
+
+######   basic encoder MK2   ########
+
+auto_encoder, encoder = encoders.basic_encoder_mk2(x_train.shape[0],
+                                  x_train.shape[1],
+                                  x_train,
+                                  y_train,
+                                  x_train_delta,#x_train and y_train have the same delta
+                                  epochs=15)
+
+auto_encoder.summary()
+
+auto_encoder.fit(x_train, y_train,
+                epochs=50,
+                batch_size=256,
+                shuffle=True,
+                validation_data=(x_test, y_test))
+
 '''######################     Test Predictions     ####################'''
 
 test_data = pd.read_csv('./data/test.csv')
@@ -220,7 +240,7 @@ max_score = test_data.shape[0]
 
 #for i in tqdm(range(encoded_solution.shape[0])):
 for i in tqdm(range(1000)):
-    if(checkStart(encoded_solution[i], test_data[i], test_deltas[i]+10)):
+    if(checkStart(encoded_solution[i], test_data[i], test_deltas[i]+10,extra_dim=True)):
         total_score += 1
 
 print('Accuracy: ', total_score/max_score)
