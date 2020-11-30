@@ -119,7 +119,7 @@ runner.train(
     loaders=loaders,
     callbacks=callbacks,
     logdir="./logs",
-    num_epochs=0,#TODO 
+    num_epochs=5,#TODO 
     main_metric="loss",
     minimize_metric=True,
     verbose=True,

@@ -353,7 +353,7 @@ submission = pd.read_csv('./sample_submission.csv', index_col='id')
 for delta in range(1,6):
     mask = test['delta']==delta
     data = test[mask].iloc[:,1:]
-    submission[mask] = direct_gradient_optimization_predict(data, delta, n_iter=2, lr=1,device=device)
+    submission[mask] = direct_gradient_optimization_predict(data, delta, n_iter=4, lr=1,device=device)
     
     
 submission.to_csv('prob_extend_kaggle.csv')
