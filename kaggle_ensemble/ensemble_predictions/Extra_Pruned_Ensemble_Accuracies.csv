@@ -1,0 +1,6 @@
+,Accuracy
+Iter_CNN.csv,0.10862
+forward_loss_iter_CNN.csv,0.10808
+z3_constraint.csv,0.56892
+Iter_CNN_With_Post.csv,0.1034
+Ensemble,0.09962

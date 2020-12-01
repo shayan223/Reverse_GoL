@@ -1,7 +1,11 @@
 ,Accuracy
-Iter_CNN.csv,0.0
-forward_loss_iter_CNN.csv,0.0
-prob_extension.csv,0.0
-quick_neighborhood.csv,0.0
+Iter_CNN.csv,0.10862
+forward_loss_iter_CNN.csv,0.10808
+prob_extension.csv,0.08172
+quick_neighborhood.csv,0.07056
 neural_CNN.csv,0.0
-Ensemble,0.0
+z3_constraint.csv,0.56892
+Iter_CNN_With_Post.csv,0.1034
+rand_forest.csv,0.01064
+GAN.csv,0.0219
+Ensemble,0.07306

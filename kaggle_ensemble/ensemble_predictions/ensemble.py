@@ -6,9 +6,10 @@ import os
 import csv
 
 ### GLOBAL CONSTANTS ###
-SIM_ALL_MODELS = True
-SAVE_ACCURACIES = True
+SIM_ALL_MODELS = False
+SAVE_ACCURACIES = False
 SAVE_PATH = './' 
+OUTPUT_FILE_NAME = 'Extra_Pruned_Ensemble_Accuracies.csv'
 #Function to check if starting frame is a solution        
 def checkStart(start, end, iterCount, shaped=True, extra_dim=False):
     #if shaped = true -> 2d input expected
@@ -103,58 +104,15 @@ test_data = test_data.to_numpy()
 
 ########  Create list of models to ensemble  #######
 
-#This commented code works, but gets tedious as we add more and more models
-
-'''
-model1 = pd.read_csv('./hashmap__solv_kaggle.csv')
-model2 = pd.read_csv('./iter_CNN_pred.csv')
-model3 = pd.read_csv('./prob_extend_kaggle.csv')
-#print(model1)
-model1.drop('id', axis='columns', inplace=True)
-model2.drop('id', axis='columns', inplace=True)
-model3.drop('id', axis='columns', inplace=True)
-
-model1 = model1.to_numpy()
-model2 = model2.to_numpy()
-model3 = model3.to_numpy()
-
-#print(model1)
-#print(model2)
-#print(model3)
-
-########  Create ensemble prediction  ############
-
-
-## Basic estimation with simple average ##
-
-#average all values, rounding to nearest number (1 or 0)
-ensemble_solution = np.around(np.mean([model1, model2, model3], axis=0))
-#counts = np.count_nonzero(ensemble_solution == 1)
-#print(ensemble_solution)
-#print(ensemble_solution.shape)
-#print(counts)
-
-
-
-total_score = 0;
-max_score = test_data.shape[0]
-
-for i in tqdm(range(ensemble_solution.shape[0])):
-    if(checkStart(ensemble_solution[i], test_data[i], test_deltas[i]+10,shaped=False)):
-        total_score += 1
-
-print('Accuracy: ', total_score/max_score)
-'''
-
-
-
-
-
 pathList = ['./Iter_CNN.csv',
             './forward_loss_iter_CNN.csv',
-            './prob_extension.csv',
-            './quick_neighborhood.csv',
-            './neural_CNN.csv',
+            #'./prob_extension.csv',
+            #'./quick_neighborhood.csv',
+            #'./neural_CNN.csv',
+            './z3_constraint.csv',
+            './Iter_CNN_With_Post.csv',
+            #'./rand_forest.csv',
+            #'./GAN.csv'
             ]
 
 modelList = []
@@ -173,7 +131,8 @@ for path in pathList:
     
     
 ### Basic estimation with simple average ###
-predictions = np.around(np.mean(modelList, axis=0))
+
+predictions = np.around(np.average(modelList, weights=[1,1,1,1], axis=0))
 
 if(predictions.shape != test_data.shape):
     print("WARNING: solutions and pradiction shapes do not match!")
@@ -226,7 +185,7 @@ if(SAVE_ACCURACIES == True):
         writer.writerows(accuracies)'''
     df = pd.DataFrame.from_dict(accuracies, orient="index")
     df.columns = ['Accuracy']
-    df.to_csv('accuracies.csv')
+    df.to_csv(OUTPUT_FILE_NAME)
 
 
 
