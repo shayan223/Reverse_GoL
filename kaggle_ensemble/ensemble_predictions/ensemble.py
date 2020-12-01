@@ -106,13 +106,13 @@ test_data = test_data.to_numpy()
 
 pathList = ['./Iter_CNN.csv',
             './forward_loss_iter_CNN.csv',
-            #'./prob_extension.csv',
-            #'./quick_neighborhood.csv',
-            #'./neural_CNN.csv',
+            './prob_extension.csv',
+            './quick_neighborhood.csv',
+            './neural_CNN.csv',
             './z3_constraint.csv',
             './Iter_CNN_With_Post.csv',
-            #'./rand_forest.csv',
-            #'./GAN.csv'
+            './rand_forest.csv',
+            './GAN.csv'
             ]
 
 modelList = []
@@ -131,8 +131,9 @@ for path in pathList:
     
     
 ### Basic estimation with simple average ###
-
-predictions = np.around(np.average(modelList, weights=[1,1,1,1], axis=0))
+#use the first for all even, second for weights.
+predictions = np.around(np.mean(modelList, axis=0))
+#predictions = np.around(np.average(modelList, weights=[1,1,1,1], axis=0))
 
 if(predictions.shape != test_data.shape):
     print("WARNING: solutions and pradiction shapes do not match!")
